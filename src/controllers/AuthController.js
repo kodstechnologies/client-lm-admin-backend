@@ -41,14 +41,17 @@ export const emailVerify = async (req, res) => {
     }
 
     const { email, password } = req.body;
+    // console.log("🚀 ~ emailVerify ~ email:", email)
 
     try {
         const user = await AdminUser.findOne({ email });
+        // console.log("🚀 ~ emailVerify ~ user:", user)
         if (!user) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
+        // console.log("🚀 ~ emailVerify ~ isMatch:", isMatch)
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
@@ -72,8 +75,9 @@ export const emailVerify = async (req, res) => {
         );
 
         // Send SMS
-        const smsMessage = `${otp} is your OTP to complete your loan application with Little Money.`;
+        const smsMessage = `${otp} is your OTP to login to LittleMoney portal.`;
         await sendSMS(user.phoneNumber, smsMessage);
+        // console.log("🚀 ~ emailVerify ~ otp:", otp)
 
         const phoneHint = '****' + user.phoneNumber.slice(-4);
         return res.json({
@@ -111,7 +115,7 @@ export const resendOtp = async (req, res) => {
             { upsert: true, new: true }
         );
 
-        await sendSMS(mobileNumber, `${otp} is your OTP to complete your loan application with Little Money.`);
+        await sendSMS(mobileNumber, `${otp} is your OTP to login to LittleMoney portal.`);
 
         return res.json({ message: 'OTP resent successfully' });
     } catch (error) {
@@ -156,10 +160,10 @@ export const verifyOtp = async (req, res) => {
             JWT_SECRET,
             { expiresIn: '1h' } // Adjust expiry as needed
         );
-        console.log("🚀 ~ verifyOtp ~ token:", token)
-        console.log("Payload:", { mobileNumber });
-        console.log("JWT_SECRET:", JWT_SECRET);
-        console.log("Generated token:", token);
+        // console.log("🚀 ~ verifyOtp ~ token:", token)
+        // console.log("Payload:", { mobileNumber });
+        // console.log("JWT_SECRET:", JWT_SECRET);
+        // console.log("Generated token:", token);
 
         return res.status(200).json({
             success: true,

@@ -7,7 +7,7 @@ const sendSMS = async (mobileNumber, message) => {
       message: message,
       senderId: SMS_SENDERID,
       number: mobileNumber,
-      templateId: "1707174322921125247",
+      templateId: "1707174322905776286",
     });
 
     const config = {
@@ -22,7 +22,7 @@ const sendSMS = async (mobileNumber, message) => {
     };
 
     const response = await axios.request(config);
-    console.log(response.data);
+    // console.log(response.data);
 
     if (response.status === 200) {
       console.log("SMS sent successfully!");

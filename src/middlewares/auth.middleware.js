@@ -17,9 +17,9 @@ export const authMiddleware = (req, res, next) => {
 
         // Expecting decoded to have at least id and name
         const { id, name, mobileNumber } = decoded;
-        console.log("🚀 ~ authMiddleware ~ id:", id)
-        console.log("🚀 ~ authMiddleware ~ mobileNumber:", mobileNumber)
-        console.log("🚀 ~ authMiddleware ~ name:", name)
+        // console.log("🚀 ~ authMiddleware ~ id:", id)
+        // console.log("🚀 ~ authMiddleware ~ mobileNumber:", mobileNumber)
+        // console.log("🚀 ~ authMiddleware ~ name:", name)
 
         req.user = {
             id,

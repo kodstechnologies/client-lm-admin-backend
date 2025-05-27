@@ -5,7 +5,7 @@ import offerSummaryModal from "../../models/offerSummary.modal.js";
 import Joi from 'joi';
 import { Account } from "../../models/Account.model.js";
 import { Affiliate } from "../../models/Affiliate.model.js";
-import { StoreGroup } from "../../models/StoreGroup.model.js";
+// import { StoreGroup } from "../../models/StoreGroup.model.js";
 import { Store } from "../../models/store.model.js";
 import { Merchant } from "../../models/Merchant.model.js";
 import mongoose from "mongoose";
@@ -439,30 +439,30 @@ export const createAffiliate = async (req, res) => {
 
 
 //create store group
-const storeGroupSchema = Joi.object({
-  Name: Joi.string().min(2).max(100).required(),
-  Phone: Joi.string().pattern(/^\d{10}$/).allow('', null),
-  Email: Joi.string().email().allow('', null),
-  Description: Joi.string().allow('', null),
-  IsActive: Joi.boolean().optional()
-});
-export const createStoreGroup = async (req, res) => {
-  try {
-    const { error, value } = storeGroupSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+// const storeGroupSchema = Joi.object({
+//   Name: Joi.string().min(2).max(100).required(),
+//   Phone: Joi.string().pattern(/^\d{10}$/).allow('', null),
+//   Email: Joi.string().email().allow('', null),
+//   Description: Joi.string().allow('', null),
+//   IsActive: Joi.boolean().optional()
+// });
+// export const createStoreGroup = async (req, res) => {
+//   try {
+//     const { error, value } = storeGroupSchema.validate(req.body);
+//     if (error) {
+//       return res.status(400).json({ message: error.details[0].message });
+//     }
 
-    const newGroup = new StoreGroup(value);
-    newGroup.setUser(req.user?.name || 'system');
-    const saved = await newGroup.save();
+//     const newGroup = new StoreGroup(value);
+//     newGroup.setUser(req.user?.name || 'system');
+//     const saved = await newGroup.save();
 
-    return res.status(201).json({ message: 'Store Group created', data: saved });
-  } catch (error) {
-    console.error('Error creating store group:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
+//     return res.status(201).json({ message: 'Store Group created', data: saved });
+//   } catch (error) {
+//     console.error('Error creating store group:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
 
 
 //create store
@@ -481,8 +481,8 @@ export const storeSchema = Joi.object({
   pinCode: Joi.string().optional().allow(""),
   accountNumber: Joi.string().optional().allow(""),
   // GroupId: Joi.string().required(),
-  AffiliateId: Joi.string().required(),
-  AccountId: Joi.string().required(),
+  AffiliateId: Joi.required(),
+  AccountId: Joi.required(),
   IsActive: Joi.boolean().optional(),
 
   // These should be strings (file paths)
@@ -490,19 +490,21 @@ export const storeSchema = Joi.object({
   shopPhoto: Joi.string().allow('').optional(),
   gstCertificate: Joi.string().allow('').optional(),
 });
-export const getCleanObjectId = (idWithPrefix) => {
-  if (!idWithPrefix) return null;
-  const parts = idWithPrefix.split('_');
-  if (parts.length === 2 && mongoose.Types.ObjectId.isValid(parts[1])) {
-    return new mongoose.Types.ObjectId(parts[1]);
-  }
-  return null;
-};
+// export const getCleanObjectId = (idWithPrefix) => {
+//   if (!idWithPrefix) return null;
+//   const parts = idWithPrefix.split('_');
+//   if (parts.length === 2 && mongoose.Types.ObjectId.isValid(parts[1])) {
+//     return new mongoose.Types.ObjectId(parts[1]);
+//   }
+//   return null;
+// };
 
 export const createStore = async (req, res) => {
   try {
+    // console.log('Request body:', req.body);
+
     const { merchantId } = req.params;
-    console.log('Uploaded files:', req.files);
+    // console.log('Uploaded files:', req.files);
 
     // Extract form fields and file paths
     const {
@@ -539,12 +541,12 @@ export const createStore = async (req, res) => {
 
     // Clean ObjectIds
     const cleanGroupId = merchantId
-    const cleanAffiliateId = getCleanObjectId(AffiliateId);
-    const cleanAccountId = getCleanObjectId(AccountId);
+    // const cleanAffiliateId = getCleanObjectId(AffiliateId);
+    // const cleanAccountId = getCleanObjectId(AccountId);
 
-    if (!cleanGroupId || !cleanAffiliateId || !cleanAccountId) {
-      return res.status(400).json({ message: 'Invalid GroupId, AffiliateId, or AccountId' });
-    }
+    // if (!cleanGroupId || !cleanAffiliateId || !cleanAccountId) {
+    //   return res.status(400).json({ message: 'Invalid GroupId, AffiliateId, or AccountId' });
+    // }
 
     // Create new store
     // Create new store instance
@@ -555,9 +557,9 @@ export const createStore = async (req, res) => {
       Email,
       State,
       GSTIN,
-      GroupId: cleanGroupId,
-      AffiliateId: cleanAffiliateId,
-      AccountId: cleanAccountId,
+      // GroupId: cleanGroupId,
+      AffiliateId: AffiliateId,
+      AccountId: AccountId,
       ifscCode,
       pinCode,
       accountNumber,
@@ -565,7 +567,7 @@ export const createStore = async (req, res) => {
       chequePhoto,
       shopPhoto,
       gstCertificate,
-      MerchantId: merchantId
+      ChainStoreId: merchantId
     });
 
     //  Set audit user (you can use name or full object based on your auditFieldsHelper)
@@ -848,7 +850,7 @@ export const createMerchant = async (req, res) => {
 
 export const getAllMerchants = async (req, res) => {
   try {
-    const merchants = await Merchant.find().sort({ createdAt: -1 }); // Sort by latest created
+    const merchants = await Merchant.find() // Sort by latest created
 
     return res.status(200).json({
       message: 'Merchants fetched successfully',
@@ -866,7 +868,7 @@ export const getAllMerchants = async (req, res) => {
 //fetch all affiliate
 export const getAllAffiliates = async (req, res) => {
   try {
-    const affiliates = await Affiliate.find().sort({ createdAt: -1 });
+    const affiliates = await Affiliate.find();
     return res.status(200).json({ message: 'All affiliates fetched successfully', data: affiliates });
   } catch (error) {
     console.error('Error fetching affiliates:', error);
@@ -876,7 +878,7 @@ export const getAllAffiliates = async (req, res) => {
 
 export const getAllAccounts = async (req, res) => {
   try {
-    const accounts = await Account.find().sort({ createdAt: -1 });
+    const accounts = await Account.find();
     return res.status(200).json({ message: 'All accounts fetched successfully', data: accounts });
   } catch (error) {
     console.error('Error fetching accounts:', error);
@@ -884,20 +886,20 @@ export const getAllAccounts = async (req, res) => {
   }
 };
 
-export const getAllDataStore = async (req, res) => {
-  try {
-    const storeGroups = await StoreGroup.find().sort({ createdAt: -1 });
-    return res.status(200).json({ message: 'All store groups fetched successfully', data: storeGroups });
-  } catch (error) {
-    console.error('Error fetching store groups:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
+// export const getAllDataStore = async (req, res) => {
+//   try {
+//     const storeGroups = await StoreGroup.find().sort({ createdAt: -1 });
+//     return res.status(200).json({ message: 'All store groups fetched successfully', data: storeGroups });
+//   } catch (error) {
+//     console.error('Error fetching store groups:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
 
 export const getStoresByMerchant = async (req, res) => {
   try {
     const { merchantId } = req.params;
-    const stores = await Store.find({ MerchantId: new mongoose.Types.ObjectId(merchantId) });
+    const stores = await Store.find({ ChainStoreId: new mongoose.Types.ObjectId(merchantId) });
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const updatedStores = stores.map(store => ({
@@ -918,7 +920,7 @@ export const fetchStoreById = async (req, res) => {
   try {
     const { storeId } = req.params; // Get store ID from URL parameter
     const store = await Store.findById(storeId); // Find store by ID
-    console.log("🚀 ~ fetchStoreById ~ store:", store)
+    // console.log("🚀 ~ fetchStoreById ~ store:", store)
 
     if (!store) {
       return res.status(404).json({ message: 'Store not found' });
@@ -1003,54 +1005,54 @@ export const updateStore = async (req, res) => {
 
 //edit store group 
 
-export const editStoreGroup = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedData = req.body;
+// export const editStoreGroup = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedData = req.body;
 
-    const storeGroup = await StoreGroup.findByIdAndUpdate(id, updatedData, {
-      new: true, // returns updated document
-      runValidators: true, // runs schema validation
-    });
+//     const storeGroup = await StoreGroup.findByIdAndUpdate(id, updatedData, {
+//       new: true, // returns updated document
+//       runValidators: true, // runs schema validation
+//     });
 
-    if (!storeGroup) {
-      return res.status(404).json({ message: 'Store Group not found' });
-    }
+//     if (!storeGroup) {
+//       return res.status(404).json({ message: 'Store Group not found' });
+//     }
 
-    res.status(200).json({ message: 'Store Group updated successfully', data: storeGroup });
-  } catch (error) {
-    console.error('Error updating store group:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+//     res.status(200).json({ message: 'Store Group updated successfully', data: storeGroup });
+//   } catch (error) {
+//     console.error('Error updating store group:', error);
+//     res.status(500).json({ message: 'Server error', error: error.message });
+//   }
+// };
 
 
 //get store group by id
 
-export const getDataStoreById = async (req, res) => {
-  try {
-    const { id } = req.params;
+// export const getDataStoreById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    // Validate ID presence
-    if (!id) {
-      return res.status(400).json({ message: 'Store Group ID is required.' });
-    }
+//     // Validate ID presence
+//     if (!id) {
+//       return res.status(400).json({ message: 'Store Group ID is required.' });
+//     }
 
-    // Find the store group by MongoDB _id or custom GroupId
-    const storeGroup = await StoreGroup.findOne({
-      $or: [{ _id: id }, { GroupId: id }]
-    });
+//     // Find the store group by MongoDB _id or custom GroupId
+//     const storeGroup = await StoreGroup.findOne({
+//       $or: [{ _id: id }, { GroupId: id }]
+//     });
 
-    if (!storeGroup) {
-      return res.status(404).json({ message: 'Store Group not found.' });
-    }
+//     if (!storeGroup) {
+//       return res.status(404).json({ message: 'Store Group not found.' });
+//     }
 
-    res.status(200).json(storeGroup);
-  } catch (error) {
-    console.error('Error fetching store group:', error);
-    res.status(500).json({ message: 'Internal server error.' });
-  }
-};
+//     res.status(200).json(storeGroup);
+//   } catch (error) {
+//     console.error('Error fetching store group:', error);
+//     res.status(500).json({ message: 'Internal server error.' });
+//   }
+// };
 
 
 //edit affiliate
@@ -1209,7 +1211,7 @@ export const uploadStore = async (req, res) => {
     }));
 
     const insertedStores = await Store.insertMany(storeData);
-    console.log("🚀 ~ uploadStore ~ insertedStores:", insertedStores);
+    // console.log("🚀 ~ uploadStore ~ insertedStores:", insertedStores);
 
     fs.unlinkSync(filePath);
 

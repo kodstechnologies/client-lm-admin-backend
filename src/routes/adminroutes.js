@@ -1,9 +1,8 @@
 import express from "express";
 import { emailVerify, verifyOtp, resendOtp } from '../controllers/AuthController.js'
-import { getAllDetails, getOffersApi, getSummaryApi, getFilteredData, getFilteredLoans, createAccount, createAffiliate, createStoreGroup, createStore, createMerchant, getAllMerchants, getAllDataStore, getAllAccounts, getAllAffiliates, getStoresByMerchant, updateStore, fetchStoreById, editStoreGroup, editAffiliate, editAccount, getDataStoreById, getAccountById, getAffiliateById, uploadStore } from '../controllers/admin/admin.controller.js'
+import { getAllDetails, getOffersApi, getSummaryApi, getFilteredData, getFilteredLoans, createAccount, createAffiliate, createStore, createMerchant, getAllMerchants, getAllAccounts, getAllAffiliates, getStoresByMerchant, updateStore, fetchStoreById, editAffiliate, editAccount, getAccountById, getAffiliateById, uploadStore } from '../controllers/admin/admin.controller.js'
 import { getAllStore } from "../controllers/admin/admin.controller.js";
 import { upload } from "../middlewares/multer.js";
-
 import { storeExcelUpload } from "../middlewares/storeUpload.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -22,14 +21,17 @@ router.get('/get-summary/:leadId', getSummaryApi)
 router.get('/get-filtered-data', getFilteredData)
 router.get('/get-filtered-loans', getFilteredLoans)
 
+
+//store management
 router.post('/create-account', authMiddleware, createAccount)
 router.post('/create-affiliate', authMiddleware ,createAffiliate)
-router.post('/create-store', createStoreGroup)
+// router.post('/create-store', createStoreGroup)
 // router.post('')
 
-// router.post('/create-chain-store', createStore)
 router.get('/get-all-stores', getAllStore)
 
+
+//mid
 router.post(
     '/merchants/:merchantId/create-store',
     upload.fields([
@@ -38,20 +40,23 @@ router.post(
         { name: 'chequePhoto', maxCount: 1 }
     ]),
     (req, res, next) => {
-        console.log(' DEBUG MULTER:');
-        console.log('req.body:', req.body);
-        console.log('req.files:', req.files);
+        // console.log(' DEBUG MULTER:');
+        // console.log('req.body:', req.body);
+        // console.log('req.files:', req.files);
         next();
     }, authMiddleware,
     createStore
 );
 router.post('/create-merchant', createMerchant)
+//m
 router.get('/get-all-merchants', getAllMerchants)
 
 
-router.get('/all-datatstores', getAllDataStore)
+// router.get('/all-datatstores', getAllDataStore)
 router.get('/all-accounts', getAllAccounts)
 router.get('/all-affiliates', getAllAffiliates)
+
+//m
 router.get('/get-stores-by-merchant/:merchantId', getStoresByMerchant)
 router.put(
     '/stores/:id',
@@ -64,8 +69,8 @@ router.put(
 );
 router.get('/get-store-by-id/:storeId', fetchStoreById)
 
-router.put('/edit-store-groups/:id', editStoreGroup);
-router.get('/get-data-store-by-id/:id', getDataStoreById)
+// router.put('/edit-store-groups/:id', editStoreGroup);
+// router.get('/get-data-store-by-id/:id', getDataStoreById)
 router.put('/edit-affiliates/:id', editAffiliate);
 router.get('/get-account-by-id/:id', getAccountById)
 

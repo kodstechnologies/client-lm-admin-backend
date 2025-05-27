@@ -20,7 +20,7 @@ app.use(express.json())
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api", AdminRoutes);
-// app.listen(PORT, console.log(`Backend is running on port:${PORT}`));
+app.listen(PORT, console.log(`Backend is running on port:${PORT}`));
 
 const startServer = async () => {
     try {

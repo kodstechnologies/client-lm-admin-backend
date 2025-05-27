@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { applyAuditMiddleware } from '../Utils/auditFieldsHelper.js';
 
 const accountSchema = new mongoose.Schema({
-  AccountId: { type: String, default: () => `ACID_${new mongoose.Types.ObjectId()}` },
+  // AccouantId: { type: String, default: () => `ACID_${new mongoose.Types.ObjectId()}` },
   AccountName: { type: String, required: true },
   IFSCCode: { type: String },
   AccountNumber: { type: String },
