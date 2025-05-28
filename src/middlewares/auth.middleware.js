@@ -16,13 +16,13 @@ export const authMiddleware = (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         // Expecting decoded to have at least id and name
-        const { id, name, mobileNumber } = decoded;
+        const { id, name, mobileNumber ,_id} = decoded;
         // console.log("🚀 ~ authMiddleware ~ id:", id)
         // console.log("🚀 ~ authMiddleware ~ mobileNumber:", mobileNumber)
         // console.log("🚀 ~ authMiddleware ~ name:", name)
 
         req.user = {
-            id,
+             id: id || _id||null, 
             name: name || mobileNumber || 'system', // fallback if name not available
             mobileNumber
         };

@@ -19,6 +19,8 @@ const storeSchema = new mongoose.Schema({
   chequePhoto: { type: String },
   shopPhoto: { type: String },
   gstCertificate: { type: String },
+  LoginCount: { type: Number, default: 0 },
+
   AuditFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true

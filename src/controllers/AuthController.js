@@ -158,7 +158,7 @@ export const verifyOtp = async (req, res) => {
         const token = jwt.sign(
             { mobileNumber }, // You can add more user data if available
             JWT_SECRET,
-            { expiresIn: '1h' } // Adjust expiry as needed
+            // { expiresIn: '1h' } 
         );
         // console.log("🚀 ~ verifyOtp ~ token:", token)
         // console.log("Payload:", { mobileNumber });

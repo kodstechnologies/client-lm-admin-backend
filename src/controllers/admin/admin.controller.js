@@ -122,10 +122,6 @@ export const getOffersApi = async (req, res) => {
 export const getSummaryApi = async (req, res) => {
   const { leadId } = req.params;
   // console.log("req params",req.params);
-  console.log("🚀 ~ getSummaryApi ~ leadId:", leadId)
-  console.log("🚀 ~ getSummaryApi ~ process.env.API_BASE_URL:", process.env.API_BASE_URL)
-  console.log("🚀 ~ getSummaryApi ~ process.env.API_KEY:", process.env.API_KEY)
-
   try {
     const axiosInstance = axios.create({
       baseURL: process.env.API_BASE_URL,
@@ -138,7 +134,6 @@ export const getSummaryApi = async (req, res) => {
 
     const response = await axiosInstance.get(`/partner/get-summary/${leadId}`);
     const summaryData = response.data;
-    console.log("🚀 ~ getSummaryApi ~ summaryData:", summaryData)
     // console.log(summaryData);
 
 
@@ -373,8 +368,10 @@ export const createAccount = async (req, res) => {
     });
 
     // Set user for audit logging
-    newAccount.setUser(createdBy);
+    newAccount.setUser({
+      name: req.user?.phone || req.user?.name || 'system',
 
+    });
     const savedAccount = await newAccount.save();
 
     return res.status(201).json({
@@ -423,7 +420,10 @@ export const createAffiliate = async (req, res) => {
 
     const newAffiliate = new Affiliate(value);
     // Set createdBy using name or phone
-    newAffiliate.setUser(req.user?.name || req.user?.phone || 'system');
+    console.log("Middleware req.user: for affilaites", req.user);
+
+    newAffiliate.setUser(req.user || { name: 'system', id: null });
+    console.log("🚀 ~ createAffiliate ~ req.user:", req.user)
 
     const savedAffiliate = await newAffiliate.save();
     return res.status(201).json({ message: 'Affiliate created successfully', data: savedAffiliate });
@@ -433,6 +433,35 @@ export const createAffiliate = async (req, res) => {
   }
 };
 
+
+// export const createAffiliate = async (req, res) => {
+//   try {
+//     const { error, value } = affiliateSchema.validate(req.body);
+//     if (error) {
+//       return res.status(400).json({ message: error.details[0].message });
+//     }
+
+//     const newAffiliate = new Affiliate(value);
+//     newAffiliate.setUser(req.user?.name || req.user?.phone || 'system');
+
+//     const savedAffiliate = await newAffiliate.save();
+//     return res.status(201).json({ message: 'Affiliate created successfully', data: savedAffiliate });
+
+//   } catch (error) {
+//     // Handle duplicate key error (E11000)
+//     if (error.code === 11000) {
+//       const duplicateField = Object.keys(error.keyValue)[0];
+//       const duplicateValue = error.keyValue[duplicateField];
+//       return res.status(409).json({
+//         message: `Duplicate entry: ${duplicateField} "${duplicateValue}" already exists.`,
+//         field: duplicateField,
+//       });
+//     }
+
+//     console.error('Error creating affiliate:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
 
 
 
@@ -569,13 +598,13 @@ export const createStore = async (req, res) => {
       gstCertificate,
       ChainStoreId: merchantId
     });
+    console.log("✅ req.user:", req.user);
 
     //  Set audit user (you can use name or full object based on your auditFieldsHelper)
     store.setUser({ name: req.user.name, id: req.user.id }); // or just req.user.name
 
     // Save store with audit info
     const newStore = await store.save();
-
     return res.status(201).json({
       success: true,
       message: 'Store created successfully',
@@ -602,8 +631,6 @@ export const createStore = async (req, res) => {
 // export const createStore = async (req, res) => {
 //   try {
 //     const { merchantId } = req.params;
-//     console.log("🚀 ~ createStore ~ merchantId:", merchantId)
-
 //     // ✅ Check if merchant exists
 //     const merchant = await Merchant.findById(merchantId);
 //     if (!merchant) {
@@ -822,10 +849,17 @@ export const createMerchant = async (req, res) => {
       // AffiliateId: affiliate._id,
       // AccountId: account._id
     });
+    console.log("✅ req.user:", req.user);
 
-    newMerchant.setUser(req.user?.name || 'system'); // Audit field
+
+    // newMerchant.setUser({ name: req.user?.name || 'system', id: req.user?.id || null });
+    newMerchant.setUser({
+      name: req.user?.phone || req.user?.name || 'system',
+    });
+
+    console.log('User being set:', newMerchant._user);
+
     await newMerchant.save();
-
     return res.status(201).json({
       message: 'Merchant created successfully',
       merchant: newMerchant,
@@ -920,8 +954,6 @@ export const fetchStoreById = async (req, res) => {
   try {
     const { storeId } = req.params; // Get store ID from URL parameter
     const store = await Store.findById(storeId); // Find store by ID
-    // console.log("🚀 ~ fetchStoreById ~ store:", store)
-
     if (!store) {
       return res.status(404).json({ message: 'Store not found' });
     }
@@ -986,7 +1018,10 @@ export const updateStore = async (req, res) => {
 
     // Set user for audit
     const userIdentifier = req.user?.name || req.user?.number || 'system';
-    store.setUser(userIdentifier);
+    store.setUser({
+      name: req.user?.phone || req.user?.name || 'system',
+      id: req.user?.id || null
+    });
 
     // Save updated store
     await store.save();
@@ -1060,15 +1095,24 @@ export const editAffiliate = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedData = req.body;
-
-    const affiliate = await Affiliate.findByIdAndUpdate(id, updatedData, {
-      new: true,
-      runValidators: true,
-    });
-
+    // Find the affiliate by id
+    const affiliate = await Affiliate.findById(id);
     if (!affiliate) {
       return res.status(404).json({ message: 'Affiliate not found' });
     }
+
+    // Update fields manually from updatedData
+    Object.keys(updatedData).forEach(key => {
+      affiliate[key] = updatedData[key];
+    });
+
+    // Set user for audit (assuming setUser accepts object or string)
+    affiliate.setUser(req.user || { name: 'system', id: null });
+
+    // Save updated affiliate document (important!)
+    await affiliate.save();
+
+    console.log("🚀 ~ editAffiliate ~ req.user:", req.user);
 
     res.status(200).json({ message: 'Affiliate updated successfully', data: affiliate });
   } catch (error) {
@@ -1109,14 +1153,24 @@ export const editAccount = async (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
 
-    const account = await Account.findByIdAndUpdate(id, updatedData, {
-      new: true,
-      runValidators: true,
-    });
-
+    // Find the account first
+    const account = await Account.findById(id);
     if (!account) {
       return res.status(404).json({ message: 'Account not found' });
     }
+
+    // Manually update only allowed fields from req.body
+    Object.keys(updatedData).forEach(key => {
+      account[key] = updatedData[key];
+    });
+
+    // Set audit user (will set updatedBy field in AuditFields)
+    account.setUser(req.user || { name: 'system', id: null });
+
+    // Save changes
+    await account.save();
+
+    console.log("🚀 ~ editAccount ~ req.user:", req.user);
 
     res.status(200).json({ message: 'Account updated successfully', data: account });
   } catch (error) {
@@ -1124,6 +1178,7 @@ export const editAccount = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 //get account by id
 
 export const getAccountById = async (req, res) => {
@@ -1211,8 +1266,6 @@ export const uploadStore = async (req, res) => {
     }));
 
     const insertedStores = await Store.insertMany(storeData);
-    // console.log("🚀 ~ uploadStore ~ insertedStores:", insertedStores);
-
     fs.unlinkSync(filePath);
 
     res.status(200).json({ message: 'Stores uploaded successfully', data: insertedStores });

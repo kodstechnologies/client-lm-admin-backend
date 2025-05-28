@@ -24,7 +24,7 @@ router.get('/get-filtered-loans', getFilteredLoans)
 
 //store management
 router.post('/create-account', authMiddleware, createAccount)
-router.post('/create-affiliate', authMiddleware ,createAffiliate)
+router.post('/create-affiliate', authMiddleware, createAffiliate)
 // router.post('/create-store', createStoreGroup)
 // router.post('')
 
@@ -47,7 +47,7 @@ router.post(
     }, authMiddleware,
     createStore
 );
-router.post('/create-merchant', createMerchant)
+router.post('/create-merchant', authMiddleware, createMerchant)
 //m
 router.get('/get-all-merchants', getAllMerchants)
 
@@ -71,10 +71,10 @@ router.get('/get-store-by-id/:storeId', fetchStoreById)
 
 // router.put('/edit-store-groups/:id', editStoreGroup);
 // router.get('/get-data-store-by-id/:id', getDataStoreById)
-router.put('/edit-affiliates/:id', editAffiliate);
+router.put('/edit-affiliates/:id', authMiddleware, editAffiliate);
 router.get('/get-account-by-id/:id', getAccountById)
 
-router.put('/edit-accounts/:id', editAccount);
+router.put('/edit-accounts/:id', authMiddleware, editAccount);
 router.get('/get-affiliate-by-id/:id', getAffiliateById)
 
 router.post(
