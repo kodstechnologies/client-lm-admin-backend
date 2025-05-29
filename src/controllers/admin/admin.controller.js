@@ -801,6 +801,7 @@ export const createMerchant = async (req, res) => {
   try {
     // Validate request body
     const { error, value } = merchantSchema.validate(req.body);
+    console.log("IsActive received from frontend:", req.body.IsActive); // ✅ Add this
 
     if (error) {
       console.log('Validation error:', error.details);
@@ -810,7 +811,7 @@ export const createMerchant = async (req, res) => {
       });
     }
 
-    const { Name, Phone, Email, GSTIN, Address, State, Description } = value;
+    const { Name, Phone, Email, GSTIN, Address, State, Description, IsActive } = value;
 
     // Fetch or create GroupId
     // let group = await StoreGroup.findOne();
@@ -845,11 +846,12 @@ export const createMerchant = async (req, res) => {
       Address,
       State,
       Description,
+      IsActive
       // GroupId: group._id,
       // AffiliateId: affiliate._id,
       // AccountId: account._id
     });
-    console.log("✅ req.user:", req.user);
+    console.log(" req.user:", req.user);
 
 
     // newMerchant.setUser({ name: req.user?.name || 'system', id: req.user?.id || null });
