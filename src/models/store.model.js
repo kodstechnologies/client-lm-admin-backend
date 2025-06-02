@@ -31,16 +31,40 @@ applyAuditMiddleware(storeSchema);
 // Auto-generate StoreCode
 storeSchema.pre('validate', async function (next) {
   if (this.isNew && !this.StoreCode) {
-    const chainStore = await mongoose.model('ChainStore').findById(this.ChainStoreId);
-    if (!chainStore || !chainStore.NumericId) {
-      return next(new Error('ChainStore or its NumericId not found'));
-    }
+    try {
+      const chainStore = await mongoose.model('ChainStore').findById(this.ChainStoreId);
+      if (!chainStore || !chainStore.NumericId) {
+        return next(new Error('ChainStore or its NumericId not found'));
+      }
 
-    const count = await mongoose.model('Store').countDocuments({ ChainStoreId: this.ChainStoreId });
-    const storeNumber = 1000 + count; // LMS_100_1000, LMS_100_1001, etc.
-    this.StoreCode = `LMS_${chainStore.NumericId}_${storeNumber}`;
+      // Retrieve existing StoreCodes for the given ChainStoreId
+      const existingStores = await mongoose.model('Store').find(
+        { ChainStoreId: this.ChainStoreId },
+        { StoreCode: 1 }
+      );
+
+      // Extract the numeric part of the StoreCode and determine the maximum
+      let maxStoreNumber = 999; // Start from 1000
+      existingStores.forEach(store => {
+        const match = store.StoreCode?.match(new RegExp(`^LMS_${chainStore.NumericId}_(\\d+)$`));
+        if (match) {
+          const number = parseInt(match[1], 10);
+          if (number > maxStoreNumber) {
+            maxStoreNumber = number;
+          }
+        }
+      });
+
+      const nextStoreNumber = maxStoreNumber + 1;
+      this.StoreCode = `LMS_${chainStore.NumericId}_${nextStoreNumber}`;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  } else {
+    next();
   }
-  next();
 });
+
 
 export const Store = mongoose.model('Store', storeSchema);

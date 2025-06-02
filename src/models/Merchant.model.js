@@ -24,7 +24,7 @@ applyAuditMiddleware(chainStoreSchema);
 // Auto-generate Code and NumericId
 chainStoreSchema.pre('validate', async function (next) {
   if (this.isNew) {
-    // Generate Code from Name (optional)
+    // Generate Code from Name
     const baseCode = this.Name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 5);
     let codeCandidate = baseCode;
     let suffix = 0;
@@ -34,11 +34,21 @@ chainStoreSchema.pre('validate', async function (next) {
     }
     this.Code = codeCandidate;
 
-    // Generate NumericId: e.g., 100, 200, 300...
-    const latest = await mongoose.models.ChainStore.findOne({});
-    this.NumericId = latest?.NumericId ? latest.NumericId + 100 : 100;
+    // Generate NumericId: find highest existing NumericId manually
+    const allChainStores = await mongoose.models.ChainStore.find({}, { NumericId: 1 });
+
+    let maxNumericId = 0;
+    for (const store of allChainStores) {
+      if (store.NumericId && store.NumericId > maxNumericId) {
+        maxNumericId = store.NumericId;
+      }
+    }
+
+    this.NumericId = maxNumericId ? maxNumericId + 100 : 100;
   }
+
   next();
 });
+
 
 export const Merchant = mongoose.model('ChainStore', chainStoreSchema);
