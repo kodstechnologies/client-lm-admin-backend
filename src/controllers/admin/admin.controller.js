@@ -11,6 +11,7 @@ import { Merchant } from "../../models/Merchant.model.js";
 import mongoose from "mongoose";
 import XLSX from 'xlsx';
 import fs from 'fs';
+import { Counter } from "../../models/Counter.model.js";
 
 export const getAllDetails = async (req, res) => {
   try {
@@ -1215,55 +1216,60 @@ export const uploadStore = async (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(sheet);
 
+    // Fetch chain store to get NumericId
+    const chainStore = await Merchant.findById(merchantId);
+    if (!chainStore || !chainStore.NumericId) {
+      return res.status(400).json({ message: 'Invalid ChainStore ID or missing NumericId' });
+    }
+
+    // Get next sequence from counter
+    const counter = await Counter.findOneAndUpdate(
+      { chainStoreNumericId: chainStore.NumericId },
+      { $inc: { seq: jsonData.length } },
+      { new: true, upsert: true }
+    );
+
+    let currentSeq = counter.seq - jsonData.length + 1;
+
+    // Prepare store data
     const storeData = await Promise.all(jsonData.map(async (row) => {
-      // Lookup Affiliate
       let affiliate = null;
       if (row.AffiliateId) {
-        const affiliateId = String(row.AffiliateId).trim();
-        console.log("Searching Affiliate for", affiliateId);
-        affiliate = await Affiliate.findOne({ AffiliateId: affiliateId });
-        if (!affiliate) console.log(` No Affiliate found for ID: ${affiliateId}`);
+        affiliate = await Affiliate.findById(String(row.AffiliateId).trim());
       }
 
-      // Lookup Group
       let group = null;
       if (row.GroupId) {
-        const groupId = String(row.GroupId).trim();
-        console.log("Searching Group for", groupId);
-        group = await StoreGroup.findOne({ GroupId: groupId });
-        if (!group) console.log(` No Store Group found for ID: ${groupId}`);
+        group = await StoreGroup.findOne({ GroupId: String(row.GroupId).trim() });
       }
 
-      // Lookup Account
       let account = null;
       if (row.AccountId) {
-        const accountId = String(row.AccountId).trim();
-        console.log("Searching Account for", accountId);
-        account = await Account.findOne({ AccountId: accountId });
-        if (!account) console.log(` No Account found for ID: ${accountId}`);
+        account = await Account.findById(String(row.AccountId).trim());
       }
 
-      // Trim all string fields before storing
+      const storeCode = `LMS_${chainStore.NumericId}_${1000 + currentSeq++}`;
+
       return {
         Name: row.Name?.toString().trim() || '',
         Address: row.Address?.toString().trim() || '',
+        pinCode: row.Pincode?.toString().trim() || '',
         Phone: row.Phone?.toString().trim() || '',
         Email: row.Email?.toString().trim() || '',
         State: row.State?.toString().trim() || '',
         GSTIN: row.GSTIN?.toString().trim() || '',
-
-        GroupId: group ? group._id : null,
-        AffiliateId: affiliate ? affiliate._id : null,
-        AccountId: account ? account._id : null,
-
-        MerchantId: merchantId,
-
+        GroupId: group?._id || null,
+        AffiliateId: affiliate?._id || null,
+        AccountId: account?._id || null,
+        ChainStoreId: merchantId,
+        StoreCode: storeCode,
         IsActive: true,
         LoginCount: 0,
         AuditFields: {
           createdBy: 'system',
           createdAt: new Date()
-        }
+        },
+        __bulk: true //  used to bypass schema auto StoreCode
       };
     }));
 
@@ -1272,7 +1278,7 @@ export const uploadStore = async (req, res) => {
 
     res.status(200).json({ message: 'Stores uploaded successfully', data: insertedStores });
   } catch (error) {
-    console.error(error);
+    console.error('Bulk upload error:', error);
     res.status(500).json({ message: 'Upload failed', error: error.message });
   }
 };
