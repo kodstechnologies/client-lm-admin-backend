@@ -3,7 +3,7 @@ import { applyAuditMiddleware } from '../Utils/auditFieldsHelper.js';
 
 const chainStoreSchema = new mongoose.Schema({
   Name: { type: String, required: true },
-  Code: { type: String, required: true, unique: true },
+  // Code: { type: String, required: true, unique: true },
   NumericId: { type: Number, unique: true }, // auto-generated
   Address: { type: String },
   Phone: { type: String, required: true, unique: true },

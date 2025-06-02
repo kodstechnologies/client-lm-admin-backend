@@ -2,7 +2,6 @@ import allDetailsModel from "../../models/allDetails.model.js";
 import axios from "axios";
 import offerSchema from '../../models/offers.model.js'
 import offerSummaryModal from "../../models/offerSummary.modal.js";
-import Joi from 'joi';
 import { Account } from "../../models/Account.model.js";
 import { Affiliate } from "../../models/Affiliate.model.js";
 // import { StoreGroup } from "../../models/StoreGroup.model.js";
@@ -12,6 +11,7 @@ import mongoose from "mongoose";
 import XLSX from 'xlsx';
 import fs from 'fs';
 import { Counter } from "../../models/Counter.model.js";
+import Joi from "joi";
 
 export const getAllDetails = async (req, res) => {
   try {
@@ -367,12 +367,15 @@ export const createAccount = async (req, res) => {
       Description,
       IsActive
     });
+    console.log("User object:", req.user);
 
     // Set user for audit logging
     newAccount.setUser({
-      name: req.user?.phone || req.user?.name || 'system',
+      number: req.user?.phone || req.user?.name || 'system',
 
     });
+    console.log("🚀 ~ createAccount ~ req.user?.name:", req.user?.name)
+    console.log("🚀 ~ createAccount ~  req.user?.phone:", req.user?.phone)
     const savedAccount = await newAccount.save();
 
     return res.status(201).json({
@@ -420,13 +423,17 @@ export const createAffiliate = async (req, res) => {
     }
 
     const newAffiliate = new Affiliate(value);
-    // Set createdBy using name or phone
-    console.log("Middleware req.user: for affilaites", req.user);
 
-    newAffiliate.setUser(req.user || { name: 'system', id: null });
-    console.log("🚀 ~ createAffiliate ~ req.user:", req.user)
+    // Prepare user object with 'number' property expected by middleware
+    const userForAudit = {
+      number: req.user?.phone || req.user?.name || 'system',
+
+    };
+
+    newAffiliate.setUser(userForAudit);
 
     const savedAffiliate = await newAffiliate.save();
+
     return res.status(201).json({ message: 'Affiliate created successfully', data: savedAffiliate });
   } catch (error) {
     console.error('Error creating affiliate:', error);
@@ -857,7 +864,7 @@ export const createMerchant = async (req, res) => {
 
     // newMerchant.setUser({ name: req.user?.name || 'system', id: req.user?.id || null });
     newMerchant.setUser({
-      name: req.user?.phone || req.user?.name || 'system',
+      number: req.user?.phone || req.user?.name || 'system',
     });
 
     console.log('User being set:', newMerchant._user);

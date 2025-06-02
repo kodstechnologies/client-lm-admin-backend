@@ -4,15 +4,15 @@ export function applyAuditMiddleware(schema) {
 
         const user = typeof this._user === 'object' && this._user !== null
             ? {
-                name: this._user.name || 'system',
+                number: this._user.number || null,
                 id: this._user.id || null,
             }
-            : { name: 'system', id: null };
+            : { number: null, id: null };
 
         if (this.isNew) {
             this.AuditFields = {
                 createdBy: user,
-                updatedBy: null,
+                updatedBy: user,
             };
         } else {
             this.AuditFields = {
