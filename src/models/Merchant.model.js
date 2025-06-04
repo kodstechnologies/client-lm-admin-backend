@@ -12,7 +12,6 @@ const chainStoreSchema = new mongoose.Schema({
   GSTIN: { type: String },
   Description: { type: String },
   LastLoginDate: { type: Date },
-  LoginCount: { type: Number, default: 0 },
   IsActive: { type: Boolean, default: true },
   AuditFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, {

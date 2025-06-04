@@ -369,11 +369,12 @@ export const createAccount = async (req, res) => {
     });
     console.log("User object:", req.user);
 
-    // Set user for audit logging
-    newAccount.setUser({
+    const userForAudit = {
       number: req.user?.phone || req.user?.name || 'system',
 
-    });
+    };
+    // Set user for audit logging
+    newAccount.setUser(userForAudit);
     console.log("🚀 ~ createAccount ~ req.user?.name:", req.user?.name)
     console.log("🚀 ~ createAccount ~  req.user?.phone:", req.user?.phone)
     const savedAccount = await newAccount.save();
@@ -609,7 +610,7 @@ export const createStore = async (req, res) => {
     console.log("✅ req.user:", req.user);
 
     //  Set audit user (you can use name or full object based on your auditFieldsHelper)
-    store.setUser({ name: req.user.name, id: req.user.id }); // or just req.user.name
+    store.setUser({ number: req.user?.phone || req.user?.name || 'system', }); // or just req.user.name
 
     // Save store with audit info
     const newStore = await store.save();
@@ -1027,11 +1028,12 @@ export const updateStore = async (req, res) => {
     }
 
     // Set user for audit
-    const userIdentifier = req.user?.name || req.user?.number || 'system';
-    store.setUser({
-      name: req.user?.phone || req.user?.name || 'system',
-      id: req.user?.id || null
-    });
+    // const userIdentifier = req.user?.name || req.user?.number || 'system';
+    const userForAudit = {
+      number: req.user?.phone || req.user?.name || 'system',
+
+    };
+    store.setUser(userForAudit);
 
     // Save updated store
     await store.save();
@@ -1117,7 +1119,11 @@ export const editAffiliate = async (req, res) => {
     });
 
     // Set user for audit (assuming setUser accepts object or string)
-    affiliate.setUser(req.user || { name: 'system', id: null });
+    const userForAudit = {
+      number: req.user?.phone || req.user?.name || 'system',
+
+    };
+    affiliate.setUser(userForAudit);
 
     // Save updated affiliate document (important!)
     await affiliate.save();
@@ -1175,7 +1181,11 @@ export const editAccount = async (req, res) => {
     });
 
     // Set audit user (will set updatedBy field in AuditFields)
-    account.setUser(req.user || { name: 'system', id: null });
+    const userForAudit = {
+      number: req.user?.phone || req.user?.name || 'system',
+
+    };
+    account.setUser(userForAudit);
 
     // Save changes
     await account.save();
