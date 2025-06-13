@@ -12,6 +12,76 @@ import XLSX from 'xlsx';
 import fs from 'fs';
 import { Counter } from "../../models/Counter.model.js";
 import Joi from "joi";
+import OrdersModel from "../../models/Orders.model.js";
+import { Customer } from "../../models/Customer.model.js";
+
+// export const getAllDetails = async (req, res) => {
+//   try {
+//     const { search = '' } = req.query;
+
+//     const query = {};
+
+//     if (search) {
+//       // Match leadId only at query level
+//       query.leadId = { $regex: search, $options: 'i' };
+//     }
+
+//     // Fetch and populate everything
+//     let details = await allDetailsModel.find(query)
+//       .populate('personalLoanRef')
+//       .populate('businessLoanRef')
+//       .populate('appliedCustomerRef')
+//       .populate('registerRef')
+//       .populate('loginCountRef')
+//       .exec();
+
+//     // If search doesn't match leadId, try filtering by mobileNumber in populated refs
+//     if (search && details.length === 0) {
+//       // Re-fetch all and filter in JS
+//       details = await allDetailsModel.find({})
+//         .populate('personalLoanRef')
+//         .populate('businessLoanRef')
+//         .populate('appliedCustomerRef')
+//         .populate('registerRef')
+//         .populate('loginCountRef')
+//         .exec();
+
+//       details = details.filter(item =>
+//         item?.registerRef?.mobileNumber?.includes(search) ||
+//         item?.personalLoanRef?.mobileNumber?.includes(search) ||
+//         item?.businessLoanRef?.mobileNumber?.includes(search)
+//       );
+//     }
+
+//     // Add loan type to each item
+//     details = details.map(item => {
+//       let loanType = null;
+
+//       if (item.personalLoanRef) {
+//         loanType = 'Personal Loan';
+//       } else if (item.businessLoanRef) {
+//         loanType = 'Business Loan';
+//       }
+
+//       return {
+//         ...item.toObject(), // Convert Mongoose document to plain object
+//         loanType, // Add loan type field
+//       };
+//     });
+
+//     if (!details || details.length === 0) {
+//       return res.status(404).json({ success: false, message: 'No details found' });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       data: details,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 
 export const getAllDetails = async (req, res) => {
   try {
@@ -80,6 +150,11 @@ export const getAllDetails = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
+
+
 export const getOffersApi = async (req, res) => {
   const { leadId } = req.params;
   try {
@@ -93,11 +168,11 @@ export const getOffersApi = async (req, res) => {
     });
 
     const response = await axiosInstance.get(`/partner/get-offers/${leadId}`);
-    // console.log("reasponse",response.data);
-    // res.status(200).json(response.data);
+    console.log("reasponse",response.data);
+    res.status(200).json(response.data);
     const data = response.data;
     if (data.success === "true" && Array.isArray(data.offers) && data.offers.length > 0) {
-      // Replace existing document for that leadId
+      // Replace existing document for that leadId0
       await offerSchema.findOneAndUpdate(
         { leadId },
         { leadId, offers: data.offers },
@@ -123,6 +198,7 @@ export const getOffersApi = async (req, res) => {
 export const getSummaryApi = async (req, res) => {
   const { leadId } = req.params;
   // console.log("req params",req.params);
+  console.log("🚀 ~ getSummaryApi ~ leadId:", leadId)
   try {
     const axiosInstance = axios.create({
       baseURL: process.env.API_BASE_URL,
@@ -132,10 +208,10 @@ export const getSummaryApi = async (req, res) => {
       },
     });
 
-
     const response = await axiosInstance.get(`/partner/get-summary/${leadId}`);
     const summaryData = response.data;
-    // console.log(summaryData);
+    console.log("🚀 ~ getSummaryApi ~ response:", response)
+    console.log("summary ",summaryData);
 
 
     if (summaryData.success) {
@@ -964,7 +1040,11 @@ export const getStoresByMerchant = async (req, res) => {
 export const fetchStoreById = async (req, res) => {
   try {
     const { storeId } = req.params; // Get store ID from URL parameter
-    const store = await Store.findById(storeId); // Find store by ID
+    const store = await Store.findById(storeId).populate({
+      path: 'ChainStoreId',
+      select: 'Name' // Only fetch the Name field
+    });
+    console.log("🚀 ~ fetchStoreById ~ store:", store)
     if (!store) {
       return res.status(404).json({ message: 'Store not found' });
     }
@@ -1361,4 +1441,122 @@ export const uploadStore = async (req, res) => {
 //     res.status(200).json({ message: 'Stores uploaded successfully', data: insertedStores });
 // }
 
+//ALL ORDERS
+export const fetchAllOrders = async (req, res) => {
+  try {
+    // Fetch all orders from the database
+    const orders = await OrdersModel.find();
 
+    // Send orders as JSON response
+    return res.status(200).json({
+      success: true,
+      data: orders,
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch orders',
+      error: error.message,
+    });
+  }
+};
+
+export const searchOrderByNumber = async (req, res) => {
+  try {
+    const { number } = req.query;
+    // const { storeId } = req.store;
+
+    if (!number) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+    // if (!storeId) {
+    //   return res.status(400).json({ message: 'Store ID is missing from token' });
+    // }
+
+    const now = new Date();
+
+    const orders = await OrdersModel.find({
+      number,
+      // storeId,
+      // eligibility_expiry_date: { $gte: now },
+    }).sort({ createdAt: -1 });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found for this number' });
+    }
+
+    res.status(200).json({ success: true, data: orders });
+  } catch (error) {
+    console.error('Search Order Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
+export const fetchAllCustomers = async (req, res) => {
+  try {
+    const customers = await Customer.find(); // Fetch all customers
+
+    return res.status(200).json({
+      success: true,
+      data: customers,
+    });
+  } catch (error) {
+    console.error("Error fetching customers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch customers",
+      error: error.message,
+    });
+  }
+};
+
+export const searchCustomersByPhone = async (req, res) => {
+  try {
+    const { mobileNumber } = req.query;
+
+    if (!mobileNumber) {
+      return res.status(400).json({ success: false, message: "mobileNumber is required" });
+    }
+
+    // Search using regex for partial match or exact match (you can choose)
+    const customers = await Customer.find({
+      mobileNumber: { $regex: mobileNumber, $options: 'i' }
+    });
+
+    res.status(200).json({ success: true, customers });
+  } catch (error) {
+    console.error("Error in searchCustomersByPhone:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+export const updateOrderById = async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    // Step 1: Find the order to get customerId
+    const order = await OrdersModel.findOneAndUpdate(
+      { orderId },
+      { status: "Completed" },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+
+    // Step 2: Update the related customer document's status
+    await Customer.findByIdAndUpdate(order.customerId, {
+      status: "Completed",
+    });
+
+    return res.status(200).json({ success: true, message: "Order and customer updated" });
+
+  } catch (err) {
+    console.error("Error updating order or customer:", err);
+    return res.status(500).json({ error: "Failed to update order and customer." });
+  }
+};

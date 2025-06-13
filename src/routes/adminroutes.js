@@ -1,6 +1,6 @@
 import express from "express";
 import { emailVerify, verifyOtp, resendOtp } from '../controllers/AuthController.js'
-import { getAllDetails, getOffersApi, getSummaryApi, getFilteredData, getFilteredLoans, createAccount, createAffiliate, createStore, createMerchant, getAllMerchants, getAllAccounts, getAllAffiliates, getStoresByMerchant, updateStore, fetchStoreById, editAffiliate, editAccount, getAccountById, getAffiliateById, uploadStore } from '../controllers/admin/admin.controller.js'
+import { getAllDetails, getOffersApi, getSummaryApi, getFilteredData, getFilteredLoans, createAccount, createAffiliate, createStore, createMerchant, getAllMerchants, getAllAccounts, getAllAffiliates, getStoresByMerchant, updateStore, fetchStoreById, editAffiliate, editAccount, getAccountById, getAffiliateById, uploadStore, fetchAllOrders, searchOrderByNumber, fetchAllCustomers, searchCustomersByPhone, updateOrderById } from '../controllers/admin/admin.controller.js'
 import { getAllStore } from "../controllers/admin/admin.controller.js";
 import { upload } from "../middlewares/multer.js";
 import { storeExcelUpload } from "../middlewares/storeUpload.js";
@@ -10,9 +10,16 @@ const router = express.Router();
 
 router.post('/email-verification', emailVerify)
 router.post('/otp-verification', verifyOtp)
-// router.use(authMiddleware)
+
 router.post('/resend-otp', resendOtp)
-router.get('/all-details', getAllDetails)
+router.get('/all-details',getAllDetails)
+router.get('/all-orders', fetchAllOrders)
+router.get('/search-orders-by-phone-number', searchOrderByNumber)
+router.get('/all-customers', fetchAllCustomers)
+router.get('/search-customers-by-phone', searchCustomersByPhone)
+router.put('/update-order-by-id/:orderId', updateOrderById)
+
+
 // router.get('/test-offer', (req, res) => {
 //     res.send('Test Offer Route Working');
 //   });
@@ -31,7 +38,7 @@ router.post('/create-affiliate', authMiddleware, createAffiliate)
 router.get('/get-all-stores', getAllStore)
 
 
-//mid
+
 router.post(
     '/merchants/:merchantId/create-store',
     upload.fields([

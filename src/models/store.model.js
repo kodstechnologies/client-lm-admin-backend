@@ -20,6 +20,7 @@ const storeSchema = new mongoose.Schema({
   shopPhoto: { type: String },
   gstCertificate: { type: String },
   LoginCount: { type: Number, default: 0 },
+LastLoginDate: { type: Date },
 
   AuditFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, {
