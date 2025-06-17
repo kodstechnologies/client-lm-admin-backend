@@ -1445,7 +1445,7 @@ export const uploadStore = async (req, res) => {
 export const fetchAllOrders = async (req, res) => {
   try {
     // Fetch all orders from the database
-    const orders = await OrdersModel.find();
+    const orders = await OrdersModel.find().sort({updatedAt:-1});
 
     // Send orders as JSON response
     return res.status(200).json({
@@ -1497,7 +1497,7 @@ export const searchOrderByNumber = async (req, res) => {
 
 export const fetchAllCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find(); // Fetch all customers
+    const customers = await Customer.find().sort({updatedAt:-1}); // Fetch all customers
 
     return res.status(200).json({
       success: true,
@@ -1524,7 +1524,7 @@ export const searchCustomersByPhone = async (req, res) => {
     // Search using regex for partial match or exact match (you can choose)
     const customers = await Customer.find({
       mobileNumber: { $regex: mobileNumber, $options: 'i' }
-    });
+    }).sort({updatedAt:-1});
 
     res.status(200).json({ success: true, customers });
   } catch (error) {
