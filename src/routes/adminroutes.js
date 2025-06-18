@@ -20,9 +20,9 @@ router.get('/search-customers-by-phone', searchCustomersByPhone)
 router.put('/update-order-by-id/:orderId', updateOrderById)
 //test
 
-// router.get('/test-offer', (req, res) => {
-//     res.send('Test Offer Route Working');
-//   });
+router.get('/', (req, res) => {
+    res.send('Test Offer Route Working');
+  });
 router.get('/all-offers/:leadId', getOffersApi)
 router.get('/get-summary/:leadId', getSummaryApi)
 router.get('/get-filtered-data', getFilteredData)
