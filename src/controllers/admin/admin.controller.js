@@ -242,6 +242,70 @@ export const getSummaryApi = async (req, res) => {
 }
 
 //fliter based on created at and updated at(pl and bl)
+// export const getFilteredData = async (req, res) => {
+//   try {
+//     const { from, to, type = 'created' } = req.query;
+
+//     const fromDate = from ? new Date(from) : null;
+//     const toDate = to ? new Date(to) : null;
+
+//     if (toDate) {
+//       toDate.setHours(23, 59, 59, 999); // include full day
+//     }
+
+//     const dateField = type === 'updated' ? 'updatedAt' : 'createdAt';
+
+//     console.log('🕒 Date Filter:', { fromDate, toDate, type });
+
+//     const pipeline = [];
+
+//     // Match only on top-level document’s date first
+//     if (fromDate && toDate) {
+//       pipeline.push({
+//         $match: {
+//           [dateField]: { $gte: fromDate, $lte: toDate },
+//         },
+//       });
+//     }
+
+//     // Then do lookups
+//     pipeline.push(
+//       {
+//         $lookup: {
+//           from: 'personalloans',
+//           localField: 'personalLoanRef',
+//           foreignField: '_id',
+//           as: 'personalLoan',
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: 'businessloans',
+//           localField: 'businessLoanRef',
+//           foreignField: '_id',
+//           as: 'businessLoan',
+//         },
+//       },
+//       {
+//         $addFields: {
+//           personalLoan: { $arrayElemAt: ['$personalLoan', 0] },
+//           businessLoan: { $arrayElemAt: ['$businessLoan', 0] },
+//         },
+//       }
+//     );
+
+//     const result = await allDetailsModel.aggregate(pipeline);
+
+//     if (!result || result.length === 0) {
+//       return res.status(404).json({ success: false, message: 'No details found' });
+//     }
+
+//     res.status(200).json({ success: true, data: result });
+//   } catch (error) {
+//     console.error('❌ Server Error:', error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 export const getFilteredData = async (req, res) => {
   try {
     const { from, to, type = 'created' } = req.query;
@@ -250,15 +314,30 @@ export const getFilteredData = async (req, res) => {
     const toDate = to ? new Date(to) : null;
 
     if (toDate) {
-      toDate.setHours(23, 59, 59, 999); // include the full day
+      toDate.setHours(23, 59, 59, 999); // include full day
     }
 
     const dateField = type === 'updated' ? 'updatedAt' : 'createdAt';
 
     console.log('🕒 Date Filter:', { fromDate, toDate, type });
 
-    // Pipeline starts with $lookup
-    const pipeline = [
+    const pipeline = [];
+
+    // 💡 Add flexible date filtering
+    if (fromDate || toDate) {
+      const matchCondition = {};
+      if (fromDate) matchCondition.$gte = fromDate;
+      if (toDate) matchCondition.$lte = toDate;
+
+      pipeline.push({
+        $match: {
+          [dateField]: matchCondition,
+        },
+      });
+    }
+
+    // $lookup steps
+    pipeline.push(
       {
         $lookup: {
           from: 'personalloans',
@@ -280,20 +359,8 @@ export const getFilteredData = async (req, res) => {
           personalLoan: { $arrayElemAt: ['$personalLoan', 0] },
           businessLoan: { $arrayElemAt: ['$businessLoan', 0] },
         },
-      },
-    ];
-
-    // Add match only if both fromDate and toDate are provided
-    if (fromDate && toDate) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { [`personalLoan.${dateField}`]: { $gte: fromDate, $lte: toDate } },
-            { [`businessLoan.${dateField}`]: { $gte: fromDate, $lte: toDate } },
-          ],
-        },
-      });
-    }
+      }
+    );
 
     const result = await allDetailsModel.aggregate(pipeline);
 
