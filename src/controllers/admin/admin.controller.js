@@ -168,7 +168,7 @@ export const getOffersApi = async (req, res) => {
     });
 
     const response = await axiosInstance.get(`/partner/get-offers/${leadId}`);
-    console.log("reasponse",response.data);
+    console.log("reasponse", response.data);
     res.status(200).json(response.data);
     const data = response.data;
     if (data.success === "true" && Array.isArray(data.offers) && data.offers.length > 0) {
@@ -211,7 +211,7 @@ export const getSummaryApi = async (req, res) => {
     const response = await axiosInstance.get(`/partner/get-summary/${leadId}`);
     const summaryData = response.data;
     console.log("🚀 ~ getSummaryApi ~ response:", response)
-    console.log("summary ",summaryData);
+    console.log("summary ", summaryData);
 
 
     if (summaryData.success) {
@@ -246,19 +246,18 @@ export const getFilteredData = async (req, res) => {
   try {
     const { from, to, type = 'created' } = req.query;
 
-    // Parse date range safely
     const fromDate = from ? new Date(from) : null;
     const toDate = to ? new Date(to) : null;
 
     if (toDate) {
-      toDate.setHours(23, 59, 59, 999); // Include full end day
+      toDate.setHours(23, 59, 59, 999); // include the full day
     }
 
     const dateField = type === 'updated' ? 'updatedAt' : 'createdAt';
 
     console.log('🕒 Date Filter:', { fromDate, toDate, type });
 
-    // Build aggregation pipeline
+    // Pipeline starts with $lookup
     const pipeline = [
       {
         $lookup: {
@@ -268,8 +267,6 @@ export const getFilteredData = async (req, res) => {
           as: 'personalLoan',
         },
       },
-      { $unwind: { path: '$personalLoan', preserveNullAndEmptyArrays: true } },
-
       {
         $lookup: {
           from: 'businessloans',
@@ -278,10 +275,15 @@ export const getFilteredData = async (req, res) => {
           as: 'businessLoan',
         },
       },
-      { $unwind: { path: '$businessLoan', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          personalLoan: { $arrayElemAt: ['$personalLoan', 0] },
+          businessLoan: { $arrayElemAt: ['$businessLoan', 0] },
+        },
+      },
     ];
 
-    // Add date range match
+    // Add match only if both fromDate and toDate are provided
     if (fromDate && toDate) {
       pipeline.push({
         $match: {
@@ -293,13 +295,7 @@ export const getFilteredData = async (req, res) => {
       });
     }
 
-    // Run aggregation
     const result = await allDetailsModel.aggregate(pipeline);
-
-    console.log(`✅ Aggregated Records: ${result.length}`);
-    result.forEach((r, i) => {
-      console.log(`→ [${i}] Personal: ${r?.personalLoan?.[dateField]} | Business: ${r?.businessLoan?.[dateField]}`);
-    });
 
     if (!result || result.length === 0) {
       return res.status(404).json({ success: false, message: 'No details found' });
@@ -308,9 +304,10 @@ export const getFilteredData = async (req, res) => {
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error('❌ Server Error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 
 export const getFilteredLoans = async (req, res) => {
@@ -1445,7 +1442,7 @@ export const uploadStore = async (req, res) => {
 export const fetchAllOrders = async (req, res) => {
   try {
     // Fetch all orders from the database
-    const orders = await OrdersModel.find().sort({updatedAt:-1});
+    const orders = await OrdersModel.find().sort({ updatedAt: -1 });
 
     // Send orders as JSON response
     return res.status(200).json({
@@ -1498,7 +1495,7 @@ export const searchOrderByNumber = async (req, res) => {
 
 export const fetchAllCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find().sort({updatedAt:-1}); // Fetch all customers
+    const customers = await Customer.find().sort({ updatedAt: -1 }); // Fetch all customers
 
     return res.status(200).json({
       success: true,
@@ -1525,7 +1522,7 @@ export const searchCustomersByPhone = async (req, res) => {
     // Search using regex for partial match or exact match (you can choose)
     const customers = await Customer.find({
       mobileNumber: { $regex: mobileNumber, $options: 'i' }
-    }).sort({updatedAt:-1});
+    }).sort({ updatedAt: -1 });
     console.log("🚀 ~ searchCustomersByPhone ~ customers:", customers)
 
     res.status(200).json({ success: true, customers });
